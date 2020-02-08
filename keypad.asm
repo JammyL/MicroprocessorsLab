@@ -4,6 +4,7 @@ acs0	udata_acs   ; reserve data space in access ram
 	 
 angle	    res 1
 unit_count  res 1
+temp	    res	1
 bits_on	    res 1
 bits_count  res 1
 bits_test   res 1
@@ -12,38 +13,78 @@ code
 	
 get_angle
     clrf    TRISD
-    movlw   0x02
-    movwf   unit_count
-    call    check_input_angle
+    clrf    angle
+    call    get_input_angle
+    call    process_angle
+    call    get_nil
+    movlw   0x01
+    cpfsgt  temp
+    bra	    get_angle
+    ;	TODO: DISPLAY DIGIT
+    movlw   0x0A
+    mulwf   temp
+
+    addwf   angle
     
     
-check_input_angle
+
+
+get_input_angle
     movlw   0x08
     movwf   bits_count
     movf    PORTD, W
-    BTFSC   W, 3
-    bra	    check_input_angle
-    BTFSC   W, 7
+    tstfsz  W
+    bra	    get_input_angle
+    btfsc   W, 3
+    bra	    get_input_angle
+    btfsc   W, 7
     bra     check_zero
 zero_passed
     movwf   bits_test
-    BTFSC   bits_test, 0
+    btfsc   bits_test, 0
     incf    bits_on
-    RRNCF   bits_test
+    rrncf   bits_test
     decfsz  bits_count
     bra	    zero_passed
-    BTFSC   bits_count, 2
-    bra	    check_input_angle
-    BTFSC   bits_count, 3
-    bra	    check_input_angle
+    btfsc   bits_count, 2
+    bra	    get_input_angle
+    btfsc   bits_count, 3
+    bra	    get_input_angle
     return
     
-    
+get_nil
+    movf    PORTD, W
+    tstfsz  W
+    bra	    get_nil
+    return
     
 check_zero
-    BTFSS   W, 1
-    bra	    check_input_angle
+    btfss   W, 1
+    bra	    get_input_angle
     bra	    zero_passed
+    
+process_angle
+    clrf    temp
+    btfsc   W, 7
+    bra	    process_done
+process_loop_1
+    incf    temp
+    btfsc   W
+    bra	    process_done
+    rrncf   W
+    bra	    process_loop1  
+process_loop_3
+    btfsc   W
+    bra	    process_done
+    rrncf   W
+    incf    temp
+    incf    temp
+    incf    temp
+    bra	    process_loop3
+process_done
+    return
+    
+
     
     
     
