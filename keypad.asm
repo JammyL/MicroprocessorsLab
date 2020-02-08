@@ -4,7 +4,7 @@ acs0	udata_acs   ; reserve data space in access ram
 	 
 angle	    res 1
 unit_count  res 1
-temp	    res	1
+temp	    res	3
 bits_on	    res 1
 bits_count  res 1
 bits_test   res 1
@@ -14,16 +14,30 @@ code
 get_angle
     clrf    TRISD
     clrf    angle
+    clrf    temp
+    lfsr    temp, FSR0
     call    get_input_angle
     call    process_angle
     call    get_nil
     movlw   0x01
-    cpfsgt  temp
+    cpfsgt  FSR0
     bra	    get_angle
-    ;	TODO: DISPLAY DIGIT
+    ;	TODO: DISPLAY DIGIT, Change function names
+    movlw   0x64
+    mulwf   POSTINC0
+    movf    PRODL, W  
+    addwf   angle
+    call    get_input_angle
+    call    process_angle
+    call    get_nil
     movlw   0x0A
-    mulwf   temp
-
+    mulwf   POSTINC0
+    movf    PRODL, W  
+    addwf   angle
+    call    get_input_angle
+    call    process_angle
+    call    get_nil
+    movf    FSR0, W
     addwf   angle
     
     
@@ -64,11 +78,11 @@ check_zero
     bra	    zero_passed
     
 process_angle
-    clrf    temp
+    clrf    FSR0
     btfsc   W, 7
     bra	    process_done
 process_loop_1
-    incf    temp
+    incf    FSR0
     btfsc   W
     bra	    process_done
     rrncf   W
@@ -77,9 +91,9 @@ process_loop_3
     btfsc   W
     bra	    process_done
     rrncf   W
-    incf    temp
-    incf    temp
-    incf    temp
+    incf    FSR0
+    incf    FSR0
+    incf    FSR0
     bra	    process_loop3
 process_done
     return
