@@ -1,6 +1,6 @@
 #include p18f87k22.inc
 
-    global  LCD_Setup, LCD_Write_Message, LCD_Write_Hex
+    global  LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_delay_x4us, LCD_Send_Byte_D
 
 acs0    udata_acs   ; named variables in access ram
 LCD_cnt_l   res 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -9,13 +9,10 @@ LCD_cnt_ms  res 1   ; reserve 1 byte for ms counter
 LCD_tmp	    res 1   ; reserve 1 byte for temporary use
 LCD_counter res 1   ; reserve 1 byte for counting through nessage
 
-acs_ovr	access_ovr
-LCD_hex_tmp res 1   ; reserve 1 byte for variable LCD_hex_tmp	
-
 	constant    LCD_E=5	; LCD enable bit
     	constant    LCD_RS=4	; LCD register select bit
 
-LCD	code
+LCD	code 0x400
     
 LCD_Setup
 	clrf    LATB
@@ -49,22 +46,6 @@ LCD_Setup
 	call	LCD_delay_x4us
 	return
 
-LCD_Write_Hex	    ; Writes byte stored in W as hex
-	movwf	LCD_hex_tmp
-	swapf	LCD_hex_tmp,W	; high nibble first
-	call	LCD_Hex_Nib
-	movf	LCD_hex_tmp,W	; then low nibble
-LCD_Hex_Nib	    ; writes low nibble as hex character
-	andlw	0x0F
-	movwf	LCD_tmp
-	movlw	0x0A
-	cpfslt	LCD_tmp
-	addlw	0x07	; number is greater than 9 
-	addlw	0x26
-	addwf	LCD_tmp,W
-	call	LCD_Send_Byte_D ; write out ascii
-	return
-	
 LCD_Write_Message	    ; Message stored at FSR2, length stored in W
 	movwf   LCD_counter
 LCD_Loop_message
@@ -72,6 +53,9 @@ LCD_Loop_message
 	call    LCD_Send_Byte_D
 	decfsz  LCD_counter
 	bra	LCD_Loop_message
+	
+;	movlw	b'11000000'	; entry mode incr by 1 no shift
+;	call	LCD_Send_Byte_I
 	return
 
 LCD_Send_Byte_I		    ; Transmits byte stored in W to instruction reg
@@ -147,6 +131,7 @@ LCD_delay_x4us		    ; delay given in chunks of 4 microsecond in W
 LCD_delay			; delay routine	4 instruction loop == 250ns	    
 	movlw 	0x00		; W=0
 lcdlp1	decf 	LCD_cnt_l,F	; no carry when 0x00 -> 0xff
+
 	subwfb 	LCD_cnt_h,F	; no carry when 0x00 -> 0xff
 	bc 	lcdlp1		; carry, then loop again
 	return			; carry reset so return
