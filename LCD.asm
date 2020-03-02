@@ -1,4 +1,5 @@
 #include p18f87k22.inc
+; code to operate the LCD
 
     global  LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_delay_x4us, LCD_Send_Byte_D
 
@@ -53,9 +54,6 @@ LCD_Loop_message
 	call    LCD_Send_Byte_D
 	decfsz  LCD_counter
 	bra	LCD_Loop_message
-	
-;	movlw	b'11000000'	; entry mode incr by 1 no shift
-;	call	LCD_Send_Byte_I
 	return
 
 LCD_Send_Byte_I		    ; Transmits byte stored in W to instruction reg
